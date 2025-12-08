@@ -7,9 +7,12 @@ Aplikasi HRIS (Human Resource Information System) untuk manajemen absensi karyaw
 ### Untuk Admin:
 - ✅ Dashboard monitoring real-time
 - 👥 Manajemen karyawan (CRUD)
+- 🕐 Manajemen shift (CRUD)
+- 📅 Penjadwalan shift karyawan (per minggu)
 - 📊 Data absensi lengkap dengan filter tanggal
-- 📈 Statistik absensi (total, hadir, terlambat)
+- 📈 Statistik absensi (total, hadir, terlambat, alpha)
 - 📥 Export laporan ke CSV
+- ⚙️ Pengaturan sistem
 - 🔒 Role-based access control
 
 ### Untuk Karyawan:
@@ -17,6 +20,8 @@ Aplikasi HRIS (Human Resource Information System) untuk manajemen absensi karyaw
 - ✅ Check-out dengan validasi GPS
 - 📍 Validasi radius lokasi kantor (100m)
 - 📊 Lihat status absensi hari ini
+- 📅 Lihat jadwal shift bulanan
+- 📈 Statistik absensi bulanan pribadi
 - ⏰ Deteksi keterlambatan otomatis
 
 ## 🛠️ Teknologi Stack
@@ -48,11 +53,24 @@ npm install
 File `.env.local` sudah dibuat dengan konfigurasi:
 
 ```env
-DATABASE_URL=postgresql://hrisadmin:hrispass123@localhost:5432/hris_db
+# PostgreSQL Configuration (for Docker Compose)
+POSTGRES_USER=hrisadmin
+POSTGRES_PASSWORD=hrispass123
+POSTGRES_DB=hris_db
+POSTGRES_PORT=5432
+
+# Database Configuration
+DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}
+
+# Session Secret (generate random string in production)
 SESSION_SECRET=hris_secret_key_change_in_production_2024
+
+# Company GPS Settings
 OFFICE_LATITUDE=-6.200000
 OFFICE_LONGITUDE=106.816666
 OFFICE_RADIUS=100
+
+# Application Settings
 NODE_ENV=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
@@ -121,6 +139,11 @@ Aplikasi akan berjalan di: `http://localhost:3000`
 - id, key, value
 - description, updated_at
 
+### Tabel: shift_schedule
+- id, user_id, shift_id
+- schedule_date, notes
+- created_by, created_at, updated_at
+
 ## 🔐 Security Features
 
 1. **Password Hashing**: bcrypt dengan salt rounds 10
@@ -160,13 +183,48 @@ docker-compose down       # Stop PostgreSQL
 docker-compose logs -f    # View logs
 ```
 
+## 📁 Struktur Project
+
+```
+project/hris/
+├── src/
+│   ├── app/
+│   │   ├── api/              # API Routes
+│   │   │   ├── admin/        # Admin endpoints
+│   │   │   ├── auth/         # Authentication
+│   │   │   ├── attendance/   # Absensi endpoints
+│   │   │   └── employee/     # Employee endpoints
+│   │   ├── dashboard/        # Dashboard pages
+│   │   │   └── admin/        # Admin dashboard
+│   │   ├── login/            # Login page
+│   │   └── register/         # Register page
+│   ├── components/           # React components
+│   └── lib/                  # Libraries & utilities
+│       ├── db.js             # Database connection
+│       ├── schema.js         # Drizzle schema
+│       ├── session.js        # Session management
+│       └── geolocation.js    # GPS utilities
+├── docker-compose.yml        # Docker configuration
+└── drizzle.config.js         # Drizzle ORM config
+```
+
+## 🚨 Troubleshooting
+
+### GPS tidak berfungsi
+- Pastikan menggunakan HTTPS atau localhost
+- Izinkan akses lokasi di browser
+- Cek apakah device mendukung Geolocation API
+
+### Database connection error
+- Pastikan Docker container berjalan: `docker ps`
+- Cek DATABASE_URL di `.env.local`
+- Restart container: `docker-compose restart`
+
+### Session/Login error
+- Clear browser cookies
+- Cek SESSION_SECRET di `.env.local`
+- Pastikan JWT token belum expired
+
 ---
 
 **Built with ❤️ using Next.js & PostgreSQL**
-
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
