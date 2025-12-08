@@ -8,18 +8,18 @@
 ## Tabel: users
 **Deskripsi**: Menyimpan data karyawan dan admin
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID unik user |
-| nip | VARCHAR(50) | UNIQUE, NOT NULL | Nomor Induk Pegawai |
-| email | VARCHAR(100) | UNIQUE, NOT NULL | Email user |
-| password | VARCHAR(255) | NOT NULL | Password (bcrypt hashed) |
-| full_name | VARCHAR(100) | NOT NULL | Nama lengkap |
-| role | VARCHAR(20) | NOT NULL, DEFAULT 'employee' | 'admin' atau 'employee' |
-| shift_id | INTEGER | FOREIGN KEY → shift(id) | ID shift karyawan |
-| is_active | BOOLEAN | DEFAULT true | Status aktif/nonaktif |
-| created_at | TIMESTAMP | DEFAULT NOW() | Waktu registrasi |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Waktu update terakhir |
+| Kolom      | Tipe         | Constraint                   | Keterangan               |
+|------------|--------------|------------------------------|--------------------------|
+| id         | SERIAL       | PRIMARY KEY                  | ID unik user             |
+| nip        | VARCHAR(50)  | UNIQUE, NOT NULL             | Nomor Induk Pegawai      |
+| email      | VARCHAR(100) | UNIQUE, NOT NULL             | Email user               |
+| password   | VARCHAR(255) | NOT NULL                     | Password (bcrypt hashed) |
+| full_name  | VARCHAR(100) | NOT NULL                     | Nama lengkap             |
+| role       | VARCHAR(20)  | NOT NULL, DEFAULT 'employee' | 'admin' atau 'employee'  |
+| shift_id   | INTEGER      | FOREIGN KEY → shift(id)      | ID shift karyawan        |
+| is_active  | BOOLEAN      | DEFAULT true                 | Status aktif/nonaktif    |
+| created_at | TIMESTAMP    | DEFAULT NOW()                | Waktu registrasi         |
+| updated_at | TIMESTAMP    | DEFAULT NOW()                | Waktu update terakhir    |
 
 **Index**: nip, email, role
 
@@ -28,14 +28,14 @@
 ## Tabel: shift
 **Deskripsi**: Menyimpan jadwal shift kerja
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID shift |
-| name | VARCHAR(50) | NOT NULL, UNIQUE | Nama shift (Pagi, Siang, Malam) |
-| start_time | TIME | NOT NULL | Jam masuk shift |
-| end_time | TIME | NOT NULL | Jam keluar shift |
-| tolerance_late | INTEGER | DEFAULT 15 | Toleransi terlambat (menit) |
-| created_at | TIMESTAMP | DEFAULT NOW() | Waktu dibuat |
+| Kolom          | Tipe        | Constraint       | Keterangan                      |
+|----------------|-------------|------------------|---------------------------------|
+| id             | SERIAL      | PRIMARY KEY      | ID shift                        |
+| name           | VARCHAR(50) | NOT NULL, UNIQUE | Nama shift (Pagi, Siang, Malam) |
+| start_time     | TIME        | NOT NULL         | Jam masuk shift                 |
+| end_time       | TIME        | NOT NULL         | Jam keluar shift                |
+| tolerance_late | INTEGER     | DEFAULT 15       | Toleransi terlambat (menit)     |
+| created_at     | TIMESTAMP   | DEFAULT NOW()    | Waktu dibuat                    |
 
 **Index**: name
 
@@ -51,20 +51,20 @@
 ## Tabel: attendance
 **Deskripsi**: Menyimpan data absensi harian
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID absensi |
-| user_id | INTEGER | FOREIGN KEY → users(id), NOT NULL | ID karyawan |
-| date | DATE | NOT NULL | Tanggal absensi |
-| check_in_time | TIMESTAMP | NULL | Waktu check in |
-| check_out_time | TIMESTAMP | NULL | Waktu check out |
-| check_in_lat | DECIMAL(10,8) | NULL | Latitude check in |
-| check_in_lng | DECIMAL(11,8) | NULL | Longitude check in |
-| check_out_lat | DECIMAL(10,8) | NULL | Latitude check out |
-| check_out_lng | DECIMAL(11,8) | NULL | Longitude check out |
-| status | VARCHAR(20) | NOT NULL | 'hadir', 'terlambat', 'izin', 'sakit', 'alpha' |
-| notes | TEXT | NULL | Catatan/keterangan |
-| created_at | TIMESTAMP | DEFAULT NOW() | Waktu record dibuat |
+| Kolom          | Tipe          | Constraint                        | Keterangan                                     |
+|----------------|---------------|-----------------------------------|------------------------------------------------|
+| id             | SERIAL        | PRIMARY KEY                       | ID absensi                                     |
+| user_id        | INTEGER       | FOREIGN KEY → users(id), NOT NULL | ID karyawan                                    |
+| date           | DATE          | NOT NULL                          | Tanggal absensi                                |
+| check_in_time  | TIMESTAMP     | NULL                              | Waktu check in                                 |
+| check_out_time | TIMESTAMP     | NULL                              | Waktu check out                                |
+| check_in_lat   | DECIMAL(10,8) | NULL                              | Latitude check in                              |
+| check_in_lng   | DECIMAL(11,8) | NULL                              | Longitude check in                             |
+| check_out_lat  | DECIMAL(10,8) | NULL                              | Latitude check out                             |
+| check_out_lng  | DECIMAL(11,8) | NULL                              | Longitude check out                            |
+| status         | VARCHAR(20)   | NOT NULL                          | 'hadir', 'terlambat', 'izin', 'sakit', 'alpha' |
+| notes          | TEXT          | NULL                              | Catatan/keterangan                             |
+| created_at     | TIMESTAMP     | DEFAULT NOW()                     | Waktu record dibuat                            |
 
 **Constraint**: UNIQUE(user_id, date)  
 **Index**: user_id, date, status
@@ -80,15 +80,15 @@
 ## Tabel: activity_log
 **Deskripsi**: Menyimpan log aktivitas penting sistem
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID log |
-| user_id | INTEGER | FOREIGN KEY → users(id) | ID user yang melakukan aksi |
-| action | VARCHAR(50) | NOT NULL | Tipe aksi (login, logout, check_in, dll) |
-| description | TEXT | NULL | Deskripsi detail |
-| ip_address | VARCHAR(50) | NULL | IP address user |
-| user_agent | TEXT | NULL | Browser/device info |
-| created_at | TIMESTAMP | DEFAULT NOW() | Waktu aksi |
+| Kolom       | Tipe        | Constraint              | Keterangan                               |
+|-------------|-------------|-------------------------|------------------------------------------|
+| id          | SERIAL      | PRIMARY KEY             | ID log                                   |
+| user_id     | INTEGER     | FOREIGN KEY → users(id) | ID user yang melakukan aksi              |
+| action      | VARCHAR(50) | NOT NULL                | Tipe aksi (login, logout, check_in, dll) |
+| description | TEXT        | NULL                    | Deskripsi detail                         |
+| ip_address  | VARCHAR(50) | NULL                    | IP address user                          |
+| user_agent  | TEXT        | NULL                    | Browser/device info                      |
+| created_at  | TIMESTAMP   | DEFAULT NOW()           | Waktu aksi                               |
 
 **Index**: user_id, action, created_at
 
@@ -104,13 +104,13 @@
 ## Tabel: company_settings
 **Deskripsi**: Menyimpan konfigurasi sistem (GPS kantor, radius)
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID setting |
-| key | VARCHAR(50) | UNIQUE, NOT NULL | Key setting |
-| value | TEXT | NOT NULL | Value setting |
-| description | TEXT | NULL | Deskripsi setting |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Waktu update |
+| Kolom       | Tipe        | Constraint       | Keterangan        |
+|-------------|-------------|------------------|-------------------|
+| id          | SERIAL      | PRIMARY KEY      | ID setting        |
+| key         | VARCHAR(50) | UNIQUE, NOT NULL | Key setting       |
+| value       | TEXT        | NOT NULL         | Value setting     |
+| description | TEXT        | NULL             | Deskripsi setting |
+| updated_at  | TIMESTAMP   | DEFAULT NOW()    | Waktu update      |
 
 **Data Default**:
 ```
@@ -126,16 +126,16 @@
 ## Tabel: shift_schedule
 **Deskripsi**: Menyimpan jadwal shift karyawan per tanggal
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | SERIAL | PRIMARY KEY | ID jadwal |
-| user_id | INTEGER | FOREIGN KEY → users(id), NOT NULL | ID karyawan |
-| shift_id | INTEGER | FOREIGN KEY → shift(id), NOT NULL | ID shift |
-| schedule_date | DATE | NOT NULL | Tanggal jadwal |
-| notes | TEXT | NULL | Catatan tambahan |
-| created_by | INTEGER | FOREIGN KEY → users(id) | Admin yang membuat jadwal |
-| created_at | TIMESTAMP | DEFAULT NOW() | Waktu dibuat |
-| updated_at | TIMESTAMP | DEFAULT NOW() | Waktu update terakhir |
+| Kolom         | Tipe      | Constraint                        | Keterangan                |
+|---------------|-----------|-----------------------------------|---------------------------|
+| id            | SERIAL    | PRIMARY KEY                       | ID jadwal                 |
+| user_id       | INTEGER   | FOREIGN KEY → users(id), NOT NULL | ID karyawan               |
+| shift_id      | INTEGER   | FOREIGN KEY → shift(id), NOT NULL | ID shift                  |
+| schedule_date | DATE      | NOT NULL                          | Tanggal jadwal            |
+| notes         | TEXT      | NULL                              | Catatan tambahan          |
+| created_by    | INTEGER   | FOREIGN KEY → users(id)           | Admin yang membuat jadwal |
+| created_at    | TIMESTAMP | DEFAULT NOW()                     | Waktu dibuat              |
+| updated_at    | TIMESTAMP | DEFAULT NOW()                     | Waktu update terakhir     |
 
 **Constraint**: UNIQUE(user_id, schedule_date)  
 **Index**: user_id, schedule_date

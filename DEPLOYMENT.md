@@ -91,16 +91,16 @@ Password: employee123
 
 ## 🛠️ Tech Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Frontend | Next.js 16 (App Router) |
-| Backend | Next.js API Routes |
-| Database | PostgreSQL 16 |
-| ORM | Drizzle ORM |
-| Auth | JWT + Secure Cookies |
-| Styling | TailwindCSS 4 |
-| Container | Docker Compose |
-| Language | JavaScript (ES6+) |
+| Component | Technology              |
+|-----------|-------------------------|
+| Frontend  | Next.js 16 (App Router) |
+| Backend   | Next.js API Routes      |
+| Database  | PostgreSQL 16           |
+| ORM       | Drizzle ORM             |
+| Auth      | JWT + Secure Cookies    |
+| Styling   | TailwindCSS 4           |
+| Container | Docker Compose          |
+| Language  | JavaScript (ES6+)       |
 
 ## 📁 Project Structure
 
