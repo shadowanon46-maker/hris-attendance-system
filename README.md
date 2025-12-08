@@ -1,3 +1,16 @@
+# HRIS Attendance System | GPS-Based Employee Tracking
+
+> Modern HRIS Dashboard for attendance management with GPS geofencing, shift scheduling, and real-time monitoring
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/shadowanon46-maker/hris-attendance-system?style=social)](https://github.com/shadowanon46-maker/hris-attendance-system)
+
+**Keywords**: HRIS, Attendance System, GPS Tracking, Employee Management, Next.js, PostgreSQL, Shift Scheduling
+
+---
+
 # HRIS Dashboard - Sistem Absensi Berbasis GPS
 
 Aplikasi HRIS (Human Resource Information System) untuk manajemen absensi karyawan menggunakan GPS geolocation dengan validasi radius kantor.
