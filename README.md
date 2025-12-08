@@ -227,4 +227,6 @@ project/hris/
 
 ---
 
+**Created by: Fitrah Andre**
+
 **Built with ❤️ using Next.js & PostgreSQL**
