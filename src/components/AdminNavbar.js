@@ -23,7 +23,6 @@ export default function AdminNavbar({ onLogout }) {
       icon: '👥',
       submenu: [
         { label: 'Data Karyawan', href: '/dashboard/admin/employees' },
-        { label: 'Atur Shift Karyawan', href: '/dashboard/admin/employees' },
       ],
     },
     {
@@ -174,9 +173,10 @@ export default function AdminNavbar({ onLogout }) {
             {/* Logout Button */}
             <button
               onClick={onLogout}
-              className="ml-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
+              className="group ml-4 px-5 py-2.5 bg-linear-to-r from-red-500 to-red-600 text-white text-sm font-semibold rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
             >
-              Logout
+              <span className="text-base">🚪</span>
+              <span>Logout</span>
             </button>
           </div>
         </div>

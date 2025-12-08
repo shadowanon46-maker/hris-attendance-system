@@ -151,7 +151,9 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {record.userName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.shiftName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(record.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {record.checkInTime
                           ? new Date(record.checkInTime).toLocaleTimeString('id-ID')
@@ -165,14 +167,14 @@ export default function AdminDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            record.status === 'hadir'
+                            record.status === 'present'
                               ? 'bg-green-100 text-green-800'
-                              : record.status === 'terlambat'
+                              : record.status === 'late'
                               ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {record.status}
+                          {record.status === 'present' ? 'hadir' : record.status === 'late' ? 'terlambat' : record.status}
                         </span>
                       </td>
                     </tr>
