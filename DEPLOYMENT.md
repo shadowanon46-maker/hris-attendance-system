@@ -7,7 +7,7 @@ Aplikasi HRIS Dashboard telah berhasil dibangun dengan fitur lengkap:
 ✅ **Database & Backend**
 - PostgreSQL 16 dengan Docker
 - Drizzle ORM (schema + migrations)
-- 5 tabel database (users, shift, attendance, activity_log, company_settings)
+- 6 tabel database (users, shift, shift_schedule, attendance, activity_log, company_settings)
 - RESTful API endpoints (authentication, attendance, admin)
 
 ✅ **Authentication & Security**
@@ -25,7 +25,9 @@ Aplikasi HRIS Dashboard telah berhasil dibangun dengan fitur lengkap:
 
 ✅ **Admin Dashboard**
 - Real-time statistics
-- Employee management
+- Employee management (CRUD)
+- Shift management (CRUD)
+- Shift scheduling (weekly/monthly)
 - Attendance monitoring
 - Date range filters
 - CSV export functionality
@@ -33,6 +35,8 @@ Aplikasi HRIS Dashboard telah berhasil dibangun dengan fitur lengkap:
 ✅ **Employee Dashboard**
 - GPS-based check-in/check-out
 - Today's attendance status
+- View monthly shift schedule
+- Monthly attendance statistics
 - Auto late detection
 - User-friendly interface
 
@@ -83,7 +87,7 @@ Password: employee123
 - **Users**: 4 (1 admin, 3 employees)
 - **Shifts**: 3 (Pagi, Siang, Malam)
 - **Settings**: 5 configuration keys
-- **Tables**: 5 fully relational
+- **Tables**: 6 fully relational (users, shift, shift_schedule, attendance, activity_log, company_settings)
 
 ## 🛠️ Tech Stack
 
@@ -136,16 +140,31 @@ hris/
 - `POST /api/attendance/check-in` - Check in
 - `POST /api/attendance/check-out` - Check out
 - `GET /api/attendance/status` - Today's status
+- `GET /api/attendance/today` - Today's attendance detail
+- `GET /api/employee/my-schedule` - Monthly shift schedule
+- `GET /api/employee/monthly-stats` - Monthly statistics
 
 ### Protected (Admin Only)
 - `GET /dashboard/admin` - Admin dashboard
-- `GET /dashboard/admin/employees` - Employee list
+- `GET /dashboard/admin/employees` - Employee management
+- `GET /dashboard/admin/shifts` - Shift management
+- `GET /dashboard/admin/shift-schedule` - Shift scheduling
 - `GET /dashboard/admin/attendance` - Attendance data
 - `GET /dashboard/admin/reports` - Reports page
+- `GET /dashboard/admin/settings` - System settings
 - `GET /api/admin/dashboard` - Dashboard stats
 - `GET /api/admin/employees` - All employees
+- `POST /api/admin/employees/create` - Create employee
+- `PUT /api/admin/employees/update` - Update employee
+- `DELETE /api/admin/employees/delete` - Delete employee
+- `PUT /api/admin/employees/update-shift` - Update employee shift
+- `GET /api/admin/shifts` - All shifts
+- `GET /api/admin/shift-schedules` - All shift schedules
+- `POST /api/admin/shift-schedules` - Create/update schedules
 - `GET /api/admin/attendance` - Attendance records
 - `GET /api/admin/export` - Export CSV
+- `GET /api/admin/settings` - Get settings
+- `PUT /api/admin/settings` - Update settings
 
 ## 🔒 Security Checklist
 
@@ -350,16 +369,17 @@ Application is production-ready when:
 
 ## 📊 Development Summary
 
-**Total Development Time**: ~2 hours  
-**Lines of Code**: ~3,000+  
-**Files Created**: 30+  
-**API Endpoints**: 15+  
-**Database Tables**: 5  
+**Total Development Time**: ~3 hours  
+**Lines of Code**: ~4,500+  
+**Files Created**: 40+  
+**API Endpoints**: 25+  
+**Database Tables**: 6  
 
 **Status**: ✅ **READY FOR TESTING**
 
 ---
 
-**Built by AI Assistant**  
+**Created by: Fitrah Andre**  
+**Built with AI Assistant**  
 **Date**: December 8, 2025  
 **Version**: 1.0.0

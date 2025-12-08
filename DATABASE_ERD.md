@@ -123,6 +123,30 @@
 
 ---
 
+## Tabel: shift_schedule
+**Deskripsi**: Menyimpan jadwal shift karyawan per tanggal
+
+| Kolom | Tipe | Constraint | Keterangan |
+|-------|------|------------|------------|
+| id | SERIAL | PRIMARY KEY | ID jadwal |
+| user_id | INTEGER | FOREIGN KEY → users(id), NOT NULL | ID karyawan |
+| shift_id | INTEGER | FOREIGN KEY → shift(id), NOT NULL | ID shift |
+| schedule_date | DATE | NOT NULL | Tanggal jadwal |
+| notes | TEXT | NULL | Catatan tambahan |
+| created_by | INTEGER | FOREIGN KEY → users(id) | Admin yang membuat jadwal |
+| created_at | TIMESTAMP | DEFAULT NOW() | Waktu dibuat |
+| updated_at | TIMESTAMP | DEFAULT NOW() | Waktu update terakhir |
+
+**Constraint**: UNIQUE(user_id, schedule_date)  
+**Index**: user_id, schedule_date
+
+**Business Rules**:
+- Satu user hanya bisa 1 jadwal per tanggal
+- Digunakan untuk penjadwalan shift mingguan/bulanan
+- Admin dapat mengatur shift berbeda untuk karyawan per hari
+
+---
+
 ## Relasi Antar Tabel
 
 ```
@@ -132,23 +156,26 @@
 └──────┬──────┘
        │
        │ has many
-       │
-┌──────▼──────┐       ┌─────────────────┐
-│   users     │◄──────┤   attendance    │
-│   (1)       │  (N)  │      (N)        │
-└──────┬──────┘       └─────────────────┘
+       ├────────────────────┐
+       │                    │
+┌──────▼──────┐       ┌─────▼────────────┐
+│   users     │◄──────┤ shift_schedule   │
+│   (1)       │  (N)  │      (N)         │
+└──────┬──────┘       └──────────────────┘
        │                    1 user can have
-       │                    many attendance
-       │                    records
+       │                    many schedules
        │
        │ has many
-       │
-┌──────▼──────┐
-│ activity_log│
-│    (N)      │
-└─────────────┘
-     1 user can have
-     many activity logs
+       ├────────────────┐
+       │                │
+┌──────▼──────┐   ┌────▼──────────┐
+│   attendance│   │  activity_log │
+│    (N)      │   │     (N)       │
+└─────────────┘   └───────────────┘
+     1 user can        1 user can have
+     have many         many activity logs
+     attendance
+     records
 ```
 
 ### Penjelasan Relasi:
@@ -157,12 +184,21 @@
    - 1 shift dapat dimiliki oleh banyak user
    - Field: users.shift_id → shift.id
 
-2. **users → attendance** (One-to-Many)
+2. **shift → shift_schedule** (One-to-Many)
+   - 1 shift dapat digunakan di banyak jadwal
+   - Field: shift_schedule.shift_id → shift.id
+
+3. **users → shift_schedule** (One-to-Many)
+   - 1 user dapat memiliki banyak jadwal shift
+   - Field: shift_schedule.user_id → users.id
+   - Constraint: Unique per tanggal (1 user = 1 jadwal per hari)
+
+4. **users → attendance** (One-to-Many)
    - 1 user dapat memiliki banyak record absensi
    - Field: attendance.user_id → users.id
    - Constraint: Unique per tanggal (1 user = 1 absensi per hari)
 
-3. **users → activity_log** (One-to-Many)
+5. **users → activity_log** (One-to-Many)
    - 1 user dapat memiliki banyak activity log
    - Field: activity_log.user_id → users.id
 
