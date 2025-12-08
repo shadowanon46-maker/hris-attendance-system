@@ -6,17 +6,17 @@ services:
     container_name: hris_postgres
     restart: always
     environment:
-      POSTGRES_USER: hrisadmin
-      POSTGRES_PASSWORD: hrispass123
-      POSTGRES_DB: hris_db
+      POSTGRES_USER: ${POSTGRES_USER:-hrisadmin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hrispass123}
+      POSTGRES_DB: ${POSTGRES_DB:-hris_db}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hrisadmin -d hris_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hrisadmin} -d ${POSTGRES_DB:-hris_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
