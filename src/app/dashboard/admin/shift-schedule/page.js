@@ -207,37 +207,38 @@ export default function ShiftSchedulePage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Penjadwalan Shift Mingguan</h2>
-          <p className="text-sm text-gray-700 mt-1">Atur jadwal shift karyawan untuk minggu tertentu</p>
+        {/* Page Header - Simple & Clean */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Penjadwalan Shift</h1>
+          <p className="text-gray-600">Atur jadwal shift karyawan untuk minggu tertentu</p>
         </div>
-        {/* Message */}
+
+        {/* Message - Clean */}
         {message.text && (
           <div
-            className={`mb-6 p-4 rounded-md ${
+            className={`mb-6 p-4 rounded-lg border ${
               message.type === 'success'
-                ? 'bg-green-50 text-green-800'
-                : 'bg-red-50 text-red-800'
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : 'bg-red-50 border-red-200 text-red-800'
             }`}
           >
             {message.text}
           </div>
         )}
 
-        {/* Week Selector */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        {/* Week Selector - Minimalist */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold">Jadwal Shift Mingguan</h2>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-gray-500 mb-1">Periode</p>
+              <p className="text-lg font-semibold text-gray-900">
                 {new Date(startDate).toLocaleDateString('id-ID', { 
                   day: 'numeric', 
-                  month: 'long', 
+                  month: 'short', 
                   year: 'numeric' 
                 })} - {new Date(endDate).toLocaleDateString('id-ID', { 
                   day: 'numeric', 
-                  month: 'long', 
+                  month: 'short', 
                   year: 'numeric' 
                 })}
               </p>
@@ -245,15 +246,15 @@ export default function ShiftSchedulePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => changeWeek(-1)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                ← Minggu Lalu
+                ← Sebelumnya
               </button>
               <button
                 onClick={() => changeWeek(1)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Minggu Depan →
+                Selanjutnya →
               </button>
             </div>
           </div>
@@ -261,73 +262,88 @@ export default function ShiftSchedulePage() {
           <button
             onClick={handleSaveSchedules}
             disabled={saving}
-            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium transition-colors"
           >
-            {saving ? 'Menyimpan...' : '💾 Simpan Semua Jadwal'}
+            {saving ? 'Menyimpan...' : 'Simpan Jadwal'}
           </button>
         </div>
 
-        {/* Schedule Table */}
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase sticky left-0 bg-gray-50">
-                  Karyawan
-                </th>
-                {weekDates.map((date) => (
-                  <th
-                    key={date}
-                    className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase"
-                  >
-                    <div>{getDayName(date)}</div>
-                    <div className="font-normal">
-                      {new Date(date).getDate()}/{new Date(date).getMonth() + 1}
-                    </div>
+        {/* Schedule Table - Clean & Simple */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">
+                    Karyawan
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.filter(e => e.role !== 'admin').map((employee) => (
-                <tr key={employee.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white">
-                    <div>{employee.fullName}</div>
-                    <div className="text-xs text-gray-600">{employee.nip}</div>
-                  </td>
-                  {weekDates.map((date) => (
-                    <td key={date} className="px-2 py-2">
-                      <select
-                        value={scheduleData[employee.id]?.[date] || ''}
-                        onChange={(e) =>
-                          handleShiftChange(employee.id, date, e.target.value)
-                        }
-                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-gray-900"
+                  {weekDates.map((date) => {
+                    const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+                    return (
+                      <th
+                        key={date}
+                        className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${
+                          isWeekend ? 'bg-red-50 text-red-700' : 'text-gray-700'
+                        }`}
                       >
-                        <option value="">-</option>
-                        {shifts.map((shift) => (
-                          <option key={shift.id} value={shift.id}>
-                            {shift.name}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                  ))}
+                        <div className="font-bold">{getDayName(date)}</div>
+                        <div className="font-normal text-gray-500">
+                          {new Date(date).getDate()}/{new Date(date).getMonth() + 1}
+                        </div>
+                      </th>
+                    );
+                  })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {employees.filter(e => e.role !== 'admin').map((employee, empIdx) => (
+                  <tr key={employee.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">{employee.fullName}</div>
+                        <div className="text-xs text-gray-500">{employee.nip}</div>
+                      </div>
+                    </td>
+                    {weekDates.map((date) => {
+                      const isWeekend = new Date(date).getDay() === 0 || new Date(date).getDay() === 6;
+                      const hasSchedule = scheduleData[employee.id]?.[date];
+                      return (
+                        <td key={date} className={`px-2 py-3 ${isWeekend ? 'bg-red-50/30' : ''}`}>
+                          <select
+                            value={scheduleData[employee.id]?.[date] || ''}
+                            onChange={(e) =>
+                              handleShiftChange(employee.id, date, e.target.value)
+                            }
+                            className={`w-full px-3 py-2 text-sm border rounded-lg transition-colors ${
+                              hasSchedule 
+                                ? 'border-indigo-300 bg-indigo-50 text-indigo-900' 
+                                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            }`}
+                          >
+                            <option value="">-</option>
+                            {shifts.map((shift) => (
+                              <option key={shift.id} value={shift.id}>
+                                {shift.name}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Legend */}
+        {/* Legend - Minimalist */}
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">📋 Petunjuk:</h3>
+          <p className="text-sm font-medium text-blue-900 mb-2">💡 Petunjuk</p>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Pilih shift untuk setiap karyawan pada setiap hari</li>
-            <li>• Pilih "-" untuk tidak memberikan shift (libur)</li>
-            <li>• Klik "Simpan Semua Jadwal" setelah selesai mengatur</li>
+            <li>• Pilih shift untuk setiap karyawan, atau pilih "-" untuk hari libur</li>
             <li>• Gunakan tombol navigasi untuk berpindah minggu</li>
-            <li>• Jadwal yang tersimpan akan digunakan untuk validasi absensi</li>
+            <li>• Klik "Simpan Jadwal" setelah selesai</li>
           </ul>
         </div>
       </main>

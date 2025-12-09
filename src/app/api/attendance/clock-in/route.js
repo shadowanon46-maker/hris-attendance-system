@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { attendance, shift, shiftSchedule } from '@/lib/schema';
+import { attendance, shift, shiftSchedule, officeLocations } from '@/lib/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { isWithinAnyOfficeLocation } from '@/lib/geolocation';
 
 // Helper function to convert time string to minutes since midnight
 function timeToMinutes(timeStr) {
@@ -51,6 +52,33 @@ export async function POST(request) {
 
     if (!latitude || !longitude) {
       return NextResponse.json({ error: 'Lokasi tidak ditemukan' }, { status: 400 });
+    }
+
+    // Get active office locations
+    const locations = await db
+      .select()
+      .from(officeLocations)
+      .where(eq(officeLocations.isActive, true));
+
+    if (locations.length === 0) {
+      return NextResponse.json(
+        { error: 'Tidak ada lokasi kantor yang aktif' },
+        { status: 400 }
+      );
+    }
+
+    // Validate location
+    const locationCheck = isWithinAnyOfficeLocation(latitude, longitude, locations);
+    
+    if (!locationCheck.isValid) {
+      return NextResponse.json(
+        { 
+          error: `Anda berada di luar area kantor. Jarak terdekat: ${locationCheck.distance}m dari ${locationCheck.nearestLocation?.name || 'kantor'}`,
+          distance: locationCheck.distance,
+          nearestLocation: locationCheck.nearestLocation?.name
+        },
+        { status: 400 }
+      );
     }
 
     // Get today's date (local timezone)

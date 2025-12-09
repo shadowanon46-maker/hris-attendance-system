@@ -83,6 +83,19 @@ export const shiftSchedule = pgTable('shift_schedule', {
   userDateIdx: uniqueIndex('shift_schedule_user_date_idx').on(table.userId, table.scheduleDate),
 }));
 
+// Tabel: office_locations (lokasi kantor)
+export const officeLocations = pgTable('office_locations', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  address: text('address'),
+  latitude: decimal('latitude', { precision: 10, scale: 8 }).notNull(),
+  longitude: decimal('longitude', { precision: 11, scale: 8 }).notNull(),
+  radius: integer('radius').notNull().default(100), // dalam meter
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   shift: one(shift, {

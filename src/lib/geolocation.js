@@ -36,6 +36,46 @@ export function isWithinRadius(userLat, userLng, officeLat, officeLng, radius) {
 }
 
 /**
+ * Check if coordinate is within any of the office locations
+ * @param {number} userLat - User latitude
+ * @param {number} userLng - User longitude
+ * @param {Array} officeLocations - Array of office locations with lat, lng, radius
+ * @returns {Object} {isValid: boolean, nearestLocation: object, distance: number}
+ */
+export function isWithinAnyOfficeLocation(userLat, userLng, officeLocations) {
+  if (!officeLocations || officeLocations.length === 0) {
+    return { isValid: false, nearestLocation: null, distance: null };
+  }
+
+  let nearestLocation = null;
+  let minDistance = Infinity;
+  let isValid = false;
+
+  for (const location of officeLocations) {
+    const lat = parseFloat(location.latitude);
+    const lng = parseFloat(location.longitude);
+    const radius = location.radius;
+
+    const distance = calculateDistance(userLat, userLng, lat, lng);
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestLocation = location;
+    }
+
+    if (distance <= radius) {
+      isValid = true;
+    }
+  }
+
+  return {
+    isValid,
+    nearestLocation,
+    distance: Math.round(minDistance),
+  };
+}
+
+/**
  * Check if current time is late based on shift
  * @param {string} startTime - Shift start time (HH:MM:SS)
  * @param {number} toleranceMinutes - Tolerance in minutes

@@ -47,7 +47,10 @@ export default function AdminNavbar({ onLogout }) {
       id: 'settings',
       label: 'Pengaturan',
       icon: '⚙️',
-      href: '/dashboard/admin/settings',
+      submenu: [
+        { label: 'Lokasi Kantor', href: '/dashboard/admin/locations' },
+        { label: 'Pengaturan Umum', href: '/dashboard/admin/settings' },
+      ],
     },
   ];
 

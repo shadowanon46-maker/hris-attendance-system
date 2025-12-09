@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { attendance, shift, shiftSchedule } from '@/lib/schema';
+import { attendance, shift, shiftSchedule, officeLocations } from '@/lib/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import { isWithinAnyOfficeLocation } from '@/lib/geolocation';
 
 export async function POST(request) {
   try {
@@ -61,6 +62,35 @@ export async function POST(request) {
     if (existingAttendance[0].checkOutTime) {
       return NextResponse.json(
         { error: 'Anda sudah melakukan clock out hari ini' },
+        { status: 400 }
+      );
+    }
+
+    // Get all active office locations
+    const activeLocations = await db
+      .select()
+      .from(officeLocations)
+      .where(eq(officeLocations.isActive, true));
+
+    if (activeLocations.length === 0) {
+      return NextResponse.json(
+        { error: 'Tidak ada lokasi kantor yang aktif' },
+        { status: 400 }
+      );
+    }
+
+    // Validate location against all active office locations
+    const locationCheck = isWithinAnyOfficeLocation(
+      latitude,
+      longitude,
+      activeLocations
+    );
+
+    if (!locationCheck.isValid) {
+      return NextResponse.json(
+        {
+          error: `Anda berada di luar jangkauan kantor. Jarak Anda dari ${locationCheck.nearestLocation}: ${locationCheck.distance.toFixed(0)} meter.`,
+        },
         { status: 400 }
       );
     }
