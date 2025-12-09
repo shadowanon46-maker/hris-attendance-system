@@ -5,6 +5,23 @@ import { eq, and } from 'drizzle-orm';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
+// Timezone helper for WIB (Asia/Jakarta)
+function getWIBDate() {
+  const now = new Date();
+  const wibOffset = 7 * 60; // WIB is UTC+7
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const wibTime = new Date(utcTime + (wibOffset * 60000));
+  return wibTime;
+}
+
+function getWIBDateString(date = null) {
+  const wibDate = date ? new Date(date) : getWIBDate();
+  const year = wibDate.getFullYear();
+  const month = String(wibDate.getMonth() + 1).padStart(2, '0');
+  const day = String(wibDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export async function GET(request) {
   try {
     // Verify session
@@ -28,7 +45,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
     
-    const queryDate = dateParam || new Date().toISOString().split('T')[0];
+    // Use WIB timezone if no date param provided
+    const queryDate = dateParam || getWIBDateString();
+    
+    console.log('Fetching attendance for userId:', payload.userId, 'date:', queryDate);
 
     // Get attendance for the date
     const result = await db
@@ -41,6 +61,8 @@ export async function GET(request) {
         )
       )
       .limit(1);
+
+    console.log('Attendance result:', result[0]);
 
     return NextResponse.json({
       attendance: result[0] || null,

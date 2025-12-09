@@ -24,6 +24,8 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 20 }).notNull().default('employee'), // 'admin' atau 'employee'
   shiftId: integer('shift_id').references(() => shift.id),
   isActive: boolean('is_active').default(true),
+  faceEmbedding: text('face_embedding'), // Store face embedding as JSON string
+  faceRegisteredAt: timestamp('face_registered_at'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => ({
@@ -42,6 +44,10 @@ export const attendance = pgTable('attendance', {
   checkInLng: decimal('check_in_lng', { precision: 11, scale: 8 }),
   checkOutLat: decimal('check_out_lat', { precision: 10, scale: 8 }),
   checkOutLng: decimal('check_out_lng', { precision: 11, scale: 8 }),
+  checkInFaceVerified: boolean('check_in_face_verified').default(false),
+  checkInFaceSimilarity: decimal('check_in_face_similarity', { precision: 5, scale: 4 }),
+  checkOutFaceVerified: boolean('check_out_face_verified').default(false),
+  checkOutFaceSimilarity: decimal('check_out_face_similarity', { precision: 5, scale: 4 }),
   status: varchar('status', { length: 20 }).notNull(), // 'hadir', 'terlambat', 'izin', 'sakit', 'alpha'
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow(),

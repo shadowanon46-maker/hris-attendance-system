@@ -20,7 +20,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - hris-network
+
+  face-recognition:
+    build:
+      context: ./face-recognition-service
+      dockerfile: Dockerfile
+    container_name: hris_face_recognition
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - face_models:/app/models
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import requests; requests.get(\"http://localhost:8000/health\")'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    networks:
+      - hris-network
 
 volumes:
   postgres_data:
     driver: local
+  face_models:
+    driver: local
+
+networks:
+  hris-network:
+    driver: bridge

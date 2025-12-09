@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifySession } from '@/lib/session';
 import { db } from '@/lib/db';
-import { users, attendance, shift } from '@/lib/schema';
+import { users, attendance, shift, shiftSchedule } from '@/lib/schema';
 import { eq, gte, lte, and } from 'drizzle-orm';
 
 export async function GET(request) {
@@ -23,7 +23,7 @@ export async function GET(request) {
       );
     }
 
-    // Fetch attendance data
+    // Fetch attendance data with shift from schedule (not user default)
     const attendances = await db
       .select({
         tanggal: attendance.date,
@@ -37,7 +37,11 @@ export async function GET(request) {
       })
       .from(attendance)
       .leftJoin(users, eq(attendance.userId, users.id))
-      .leftJoin(shift, eq(users.shiftId, shift.id))
+      .leftJoin(shiftSchedule, and(
+        eq(shiftSchedule.userId, attendance.userId),
+        eq(shiftSchedule.scheduleDate, attendance.date)
+      ))
+      .leftJoin(shift, eq(shiftSchedule.shiftId, shift.id))
       .where(and(gte(attendance.date, startDate), lte(attendance.date, endDate)))
       .orderBy(attendance.date, users.fullName);
 

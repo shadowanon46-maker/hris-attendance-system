@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminNavbar from '@/components/AdminNavbar';
+import FaceCapture from '@/components/FaceCapture';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState([]);
@@ -11,6 +12,9 @@ export default function EmployeesPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [showFaceCapture, setShowFaceCapture] = useState(false);
+  const [faceImage, setFaceImage] = useState(null);
+  const [facePreview, setFacePreview] = useState(null);
   const [formData, setFormData] = useState({
     nip: '',
     fullName: '',
@@ -51,6 +55,8 @@ export default function EmployeesPage() {
       role: 'employee',
       isActive: true,
     });
+    setFaceImage(null);
+    setFacePreview(null);
     setShowModal(true);
     setMessage({ type: '', text: '' });
   };
@@ -66,8 +72,28 @@ export default function EmployeesPage() {
       role: employee.role,
       isActive: employee.isActive,
     });
+    setFaceImage(null);
+    setFacePreview(null);
     setShowModal(true);
     setMessage({ type: '', text: '' });
+  };
+
+  const handleFaceCapture = (capturedFile) => {
+    setFaceImage(capturedFile);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFacePreview(reader.result);
+    };
+    reader.readAsDataURL(capturedFile);
+    
+    setShowFaceCapture(false);
+  };
+
+  const handleRemoveFace = () => {
+    setFaceImage(null);
+    setFacePreview(null);
   };
 
   const handleSubmit = async (e) => {
@@ -95,7 +121,42 @@ export default function EmployeesPage() {
         throw new Error(data.error || 'Gagal menyimpan data');
       }
 
-      setMessage({ type: 'success', text: data.message });
+      // If face image captured, register it
+      if (faceImage && data.user) {
+        try {
+          const faceFormData = new FormData();
+          faceFormData.append('image', faceImage);
+          faceFormData.append('userId', data.user.id);
+
+          const faceRes = await fetch('/api/admin/employees/register-face', {
+            method: 'POST',
+            body: faceFormData,
+          });
+
+          if (!faceRes.ok) {
+            const faceData = await faceRes.json();
+            console.error('Face registration failed:', faceData.error);
+            setMessage({ 
+              type: 'warning', 
+              text: `${data.message} Namun registrasi wajah gagal: ${faceData.error}` 
+            });
+            setShowModal(false);
+            fetchEmployees();
+            return;
+          }
+
+          setMessage({ type: 'success', text: `${data.message} dan wajah berhasil didaftarkan!` });
+        } catch (faceError) {
+          console.error('Face registration error:', faceError);
+          setMessage({ 
+            type: 'warning', 
+            text: `${data.message} Namun registrasi wajah gagal.` 
+          });
+        }
+      } else {
+        setMessage({ type: 'success', text: data.message });
+      }
+
       setShowModal(false);
       fetchEmployees();
     } catch (error) {
@@ -373,6 +434,56 @@ export default function EmployeesPage() {
                 </div>
               </div>
 
+              {/* Face Registration Section */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-900">Registrasi Wajah (Opsional)</h4>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Daftarkan wajah karyawan untuk verifikasi absensi
+                    </p>
+                  </div>
+                  {!facePreview && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFaceCapture(true)}
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      📸 Ambil Foto
+                    </button>
+                  )}
+                </div>
+
+                {facePreview ? (
+                  <div className="mt-3">
+                    <div className="relative inline-block">
+                      <img
+                        src={facePreview}
+                        alt="Face preview"
+                        className="w-32 h-32 object-cover rounded-lg border-2 border-blue-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveFace}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center text-xs"
+                        title="Hapus foto"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <p className="text-xs text-green-700 mt-2 flex items-center gap-1">
+                      <span>✓</span>
+                      <span>Foto wajah siap didaftarkan</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-blue-600">
+                    <span>ℹ️</span>
+                    <span>Belum ada foto wajah. Klik tombol di atas untuk mengambil foto.</span>
+                  </div>
+                )}
+              </div>
+
               {message.text && (
                 <div
                   className={`mt-4 p-3 rounded-lg border text-sm ${
@@ -402,6 +513,29 @@ export default function EmployeesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Face Capture Modal */}
+      {showFaceCapture && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Ambil Foto Wajah</h3>
+                <button
+                  onClick={() => setShowFaceCapture(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <FaceCapture
+                onCapture={handleFaceCapture}
+                onCancel={() => setShowFaceCapture(false)}
+              />
+            </div>
           </div>
         </div>
       )}

@@ -1,10 +1,28 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { attendance, shift, shiftSchedule, officeLocations } from '@/lib/schema';
+import { attendance, shift, shiftSchedule, officeLocations, users } from '@/lib/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { isWithinAnyOfficeLocation } from '@/lib/geolocation';
+import { verifyFace } from '@/lib/faceApi';
+
+// Timezone helper for WIB (Asia/Jakarta)
+function getWIBDate() {
+  const now = new Date();
+  const wibOffset = 7 * 60; // WIB is UTC+7
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const wibTime = new Date(utcTime + (wibOffset * 60000));
+  return wibTime;
+}
+
+function getWIBDateString(date = null) {
+  const wibDate = date ? new Date(date) : getWIBDate();
+  const year = wibDate.getFullYear();
+  const month = String(wibDate.getMonth() + 1).padStart(2, '0');
+  const day = String(wibDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export async function POST(request) {
   try {
@@ -25,20 +43,94 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
     }
 
-    // Get location from request
-    const body = await request.json();
-    const { latitude, longitude } = body;
+    // Get location and face image from request
+    const contentType = request.headers.get('content-type');
+    let latitude, longitude, faceImageFile;
+
+    if (contentType && contentType.includes('multipart/form-data')) {
+      // Handle FormData
+      const formData = await request.formData();
+      latitude = parseFloat(formData.get('latitude'));
+      longitude = parseFloat(formData.get('longitude'));
+      faceImageFile = formData.get('faceImage');
+    } else {
+      // Handle JSON (backward compatibility)
+      const body = await request.json();
+      latitude = body.latitude;
+      longitude = body.longitude;
+    }
 
     if (!latitude || !longitude) {
       return NextResponse.json({ error: 'Lokasi tidak ditemukan' }, { status: 400 });
     }
 
-    // Get today's date (local timezone)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const todayDate = `${year}-${month}-${day}`;
+    // Face verification (optional)
+    let faceVerified = false;
+    let faceSimilarity = null;
+    
+    if (faceImageFile) {
+      try {
+        // Get user's stored face embedding
+        const [user] = await db
+          .select({
+            faceEmbedding: users.faceEmbedding,
+          })
+          .from(users)
+          .where(eq(users.id, payload.userId))
+          .limit(1);
+
+        if (user && user.faceEmbedding) {
+          // Verify face using FastAPI
+          const storedEmbedding = JSON.parse(user.faceEmbedding);
+          
+          const faceFormData = new FormData();
+          faceFormData.append('file', faceImageFile);
+          faceFormData.append('stored_embedding', JSON.stringify(storedEmbedding));
+
+          const FACE_API_URL = process.env.NEXT_PUBLIC_FACE_API_URL || 'http://localhost:8000';
+          const faceResponse = await fetch(`${FACE_API_URL}/verify`, {
+            method: 'POST',
+            body: faceFormData,
+          });
+
+          if (faceResponse.ok) {
+            const faceData = await faceResponse.json();
+            
+            if (faceData.success && faceData.verified) {
+              faceVerified = true;
+              faceSimilarity = faceData.similarity;
+              console.log(`Face verified for user ${payload.userId}, similarity: ${faceSimilarity}`);
+            } else {
+              console.warn('Face verification failed: not a match');
+              // REJECT clock-out if face doesn't match
+              return NextResponse.json(
+                { error: 'Verifikasi wajah gagal. Wajah tidak cocok dengan data yang terdaftar.' }, 
+                { status: 403 }
+              );
+            }
+          } else {
+            console.error('Face API error:', await faceResponse.text());
+            return NextResponse.json(
+              { error: 'Gagal melakukan verifikasi wajah. Silakan coba lagi.' }, 
+              { status: 500 }
+            );
+          }
+        }
+      } catch (faceError) {
+        console.error('Face verification error:', faceError);
+        return NextResponse.json(
+          { error: 'Terjadi kesalahan saat verifikasi wajah.' }, 
+          { status: 500 }
+        );
+      }
+    }
+
+    // Get today's date in WIB timezone
+    const nowWIB = getWIBDate();
+    const todayDate = getWIBDateString(nowWIB);
+
+    console.log('Current time (WIB):', nowWIB.toISOString());
+    console.log('Today date (WIB):', todayDate);
 
     // Check if clocked in today
     const existingAttendance = await db
@@ -138,7 +230,7 @@ export async function POST(request) {
       return h * 60 + m;
     };
 
-    const currentTime = now.toTimeString().split(' ')[0]; // HH:MM:SS
+    const currentTime = nowWIB.toTimeString().split(' ')[0]; // HH:MM:SS in WIB
     const currentMin = timeToMinutes(currentTime);
     const startMin = timeToMinutes(shiftStart);
     const endMin = timeToMinutes(shiftEnd);
@@ -186,15 +278,21 @@ export async function POST(request) {
       }
     }
 
-    // Update attendance with clock out
+    // Update attendance with clock out (WIB timestamp)
     const updateData = {
-      checkOutTime: sql`NOW()`,
+      checkOutTime: nowWIB, // Use WIB timestamp instead of NOW()
     };
     
     // Add location if provided
     if (latitude && longitude) {
       updateData.checkOutLat = latitude.toString();
       updateData.checkOutLng = longitude.toString();
+    }
+    
+    // Add face verification results
+    if (faceVerified) {
+      updateData.checkOutFaceVerified = faceVerified;
+      updateData.checkOutFaceSimilarity = faceSimilarity ? faceSimilarity.toString() : null;
     }
     
     const [updatedAttendance] = await db
@@ -206,6 +304,8 @@ export async function POST(request) {
     return NextResponse.json({
       message: 'Clock out berhasil!',
       attendance: updatedAttendance,
+      faceVerified,
+      faceSimilarity,
     });
   } catch (error) {
     console.error('Clock out error:', error);

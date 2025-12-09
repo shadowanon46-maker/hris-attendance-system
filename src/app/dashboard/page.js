@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import FaceCapture from '@/components/FaceCapture';
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -11,6 +12,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showFaceCapture, setShowFaceCapture] = useState(false);
+  const [pendingClockType, setPendingClockType] = useState(null);
+  const [faceImage, setFaceImage] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -56,11 +60,17 @@ export default function DashboardPage() {
 
   const fetchTodayAttendance = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const res = await fetch(`/api/attendance/today?date=${today}`);
+      // Don't send date parameter, let backend determine WIB date
+      console.log('Fetching attendance for today (WIB timezone)');
+      const res = await fetch(`/api/attendance/today`);
       if (res.ok) {
         const data = await res.json();
+        console.log('Attendance data received:', data);
+        console.log('checkInTime:', data.attendance?.checkInTime);
+        console.log('checkOutTime:', data.attendance?.checkOutTime);
         setAttendance(data.attendance);
+      } else {
+        console.error('Failed to fetch attendance:', res.status);
       }
     } catch (error) {
       console.error('Error fetching attendance:', error);
@@ -122,32 +132,69 @@ export default function DashboardPage() {
   };
 
   const handleClockIn = async (type) => {
+    // Check if user has face registered
+    if (user?.faceEmbedding) {
+      // Show face capture modal
+      setPendingClockType(type);
+      setShowFaceCapture(true);
+      return;
+    }
+    
+    // If no face registered, proceed with GPS only
+    await performClockAction(type, null);
+  };
+
+  const handleFaceCapture = (capturedFile) => {
+    setFaceImage(capturedFile);
+    setShowFaceCapture(false);
+    
+    // Proceed with clock action using captured face
+    performClockAction(pendingClockType, capturedFile);
+  };
+
+  const performClockAction = async (type, faceFile) => {
     setLoading(true);
     setMessage({ type: '', text: '' });
 
     try {
       const coords = await getLocation();
 
+      const formData = new FormData();
+      formData.append('latitude', coords.latitude);
+      formData.append('longitude', coords.longitude);
+      
+      if (faceFile) {
+        formData.append('faceImage', faceFile);
+      }
+
       const endpoint = type === 'in' ? '/api/attendance/clock-in' : '/api/attendance/clock-out';
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(coords),
+        body: formData,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        // Show specific message for face verification failure
+        if (res.status === 403) {
+          setMessage({ type: 'error', text: '❌ ' + data.error });
+        } else {
+          setMessage({ type: 'error', text: data.error || 'Gagal melakukan absensi' });
+        }
         throw new Error(data.error || 'Gagal melakukan absensi');
       }
 
       setMessage({ type: 'success', text: data.message });
       fetchTodayAttendance();
-      fetchMonthlyStats(); // Update stats after attendance
+      fetchMonthlyStats();
     } catch (error) {
-      setMessage({ type: 'error', text: error.message });
+      // Error message already set above
+      console.error('Attendance error:', error);
     } finally {
       setLoading(false);
+      setPendingClockType(null);
+      setFaceImage(null);
     }
   };
 
@@ -403,25 +450,46 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-600 mt-1">
                     {currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
+                  
+                  {/* Face Registration Status */}
+                  {user?.faceEmbedding ? (
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 text-xs rounded-full border border-green-200">
+                      <span>✓</span>
+                      <span>Wajah Terdaftar - Verifikasi Otomatis</span>
+                    </div>
+                  ) : (
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-50 text-yellow-700 text-xs rounded-full border border-yellow-200">
+                      <span>⚠️</span>
+                      <span>Belum Daftar Wajah - GPS Only</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">
                   <button
                     onClick={() => handleClockIn('in')}
-                    disabled={loading || attendance?.checkInTime}
-                    className="w-full py-4 px-6 bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    disabled={loading || !!attendance?.checkInTime}
+                    className={`w-full py-4 px-6 text-white rounded-xl transition-all duration-200 font-semibold shadow-md flex items-center justify-center space-x-2 ${
+                      attendance?.checkInTime 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 hover:shadow-lg'
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span className="text-xl">{attendance?.checkInTime ? '✓' : '▶️'}</span>
-                    <span>{loading ? 'Memproses...' : attendance?.checkInTime ? 'Sudah Clock In' : 'Clock In'}</span>
+                    <span>{attendance?.checkInTime ? 'Sudah Clock In' : 'Clock In'}</span>
                   </button>
                   
                   <button
                     onClick={() => handleClockIn('out')}
-                    disabled={loading || !attendance?.checkInTime || attendance?.checkOutTime}
-                    className="w-full py-4 px-6 bg-linear-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                    disabled={loading || !attendance?.checkInTime || !!attendance?.checkOutTime}
+                    className={`w-full py-4 px-6 text-white rounded-xl transition-all duration-200 font-semibold shadow-md flex items-center justify-center space-x-2 ${
+                      !attendance?.checkInTime || attendance?.checkOutTime
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-linear-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 hover:shadow-lg'
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span className="text-xl">{attendance?.checkOutTime ? '✓' : '⏹️'}</span>
-                    <span>{loading ? 'Memproses...' : attendance?.checkOutTime ? 'Sudah Clock Out' : 'Clock Out'}</span>
+                    <span>{attendance?.checkOutTime ? 'Sudah Clock Out' : 'Clock Out'}</span>
                   </button>
                 </div>
 
@@ -502,6 +570,19 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Face Capture Modal */}
+      {showFaceCapture && (
+        <FaceCapture
+          mode="attendance"
+          autoCapture={true}
+          onCapture={handleFaceCapture}
+          onCancel={() => {
+            setShowFaceCapture(false);
+            setPendingClockType(null);
+          }}
+        />
+      )}
     </div>
   );
 }

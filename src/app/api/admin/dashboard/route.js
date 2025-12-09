@@ -4,6 +4,23 @@ import { db } from '@/lib/db';
 import { users, attendance } from '@/lib/schema';
 import { eq, sql, and, gte } from 'drizzle-orm';
 
+// Timezone helper for WIB (Asia/Jakarta)
+function getWIBDate() {
+  const now = new Date();
+  const wibOffset = 7 * 60; // WIB is UTC+7
+  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const wibTime = new Date(utcTime + (wibOffset * 60000));
+  return wibTime;
+}
+
+function getWIBDateString(date = null) {
+  const wibDate = date ? new Date(date) : getWIBDate();
+  const year = wibDate.getFullYear();
+  const month = String(wibDate.getMonth() + 1).padStart(2, '0');
+  const day = String(wibDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export async function GET() {
   try {
     const session = await verifySession();
@@ -23,8 +40,10 @@ export async function GET() {
       .from(users)
       .where(and(eq(users.role, 'employee'), eq(users.isActive, true)));
 
-    // Get today's attendance count
-    const today = new Date().toISOString().split('T')[0];
+    // Get today's attendance count (using WIB timezone)
+    const today = getWIBDateString();
+    console.log('Admin dashboard - today date (WIB):', today);
+    
     const [todayAttendanceResult] = await db
       .select({ count: sql`count(*)` })
       .from(attendance)
@@ -37,7 +56,8 @@ export async function GET() {
       .where(and(eq(attendance.date, today), eq(attendance.status, 'terlambat')));
 
     // Get this month's attendance stats
-    const thisMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const wibDate = getWIBDate();
+    const thisMonth = `${wibDate.getFullYear()}-${String(wibDate.getMonth() + 1).padStart(2, '0')}`;
     const [monthAttendanceResult] = await db
       .select({ count: sql`count(*)` })
       .from(attendance)

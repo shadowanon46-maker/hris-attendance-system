@@ -61,6 +61,8 @@ export async function GET() {
       role: userData.role,
       shiftId: userData.shiftId,
       isActive: userData.isActive,
+      faceEmbedding: userData.faceEmbedding,
+      faceRegisteredAt: userData.faceRegisteredAt,
       shift: shiftData,
     };
 

@@ -25,12 +25,11 @@ export default function AdminDashboard() {
       const statsData = await statsRes.json();
       setStats(statsData.stats);
 
-      // Fetch today's attendance
-      const today = new Date().toISOString().split('T')[0];
-      const attendanceRes = await fetch(
-        `/api/admin/attendance?startDate=${today}&endDate=${today}`
-      );
+      // Fetch today's attendance (no date param, let backend use WIB)
+      console.log('Fetching admin attendance for today (WIB timezone)');
+      const attendanceRes = await fetch('/api/admin/attendance');
       const attendanceData = await attendanceRes.json();
+      console.log('Admin attendance data:', attendanceData);
       setRecentAttendance(attendanceData.attendances || []);
     } catch (error) {
       console.error('Error fetching data:', error);
