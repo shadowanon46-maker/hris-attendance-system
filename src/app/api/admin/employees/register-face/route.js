@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, isNotNull, ne, and } from 'drizzle-orm';
+import { checkFaceUniqueness } from '@/lib/faceApi';
 
 const FACE_API_URL = process.env.NEXT_PUBLIC_FACE_API_URL || 'http://localhost:8000';
 
@@ -17,7 +18,7 @@ const FACE_API_URL = process.env.NEXT_PUBLIC_FACE_API_URL || 'http://localhost:8
 export async function POST(request) {
   try {
     const session = await getSession();
-    
+
     // Check authentication
     if (!session?.userId) {
       return NextResponse.json(
@@ -98,7 +99,7 @@ export async function POST(request) {
     }
 
     const faceData = await faceResponse.json();
-    console.log(`Face registration response:`, { 
+    console.log(`Face registration response:`, {
       success: faceData.success,
       liveness_confidence: faceData.liveness_confidence,
       detection_confidence: faceData.detection_confidence,
@@ -114,19 +115,52 @@ export async function POST(request) {
       );
     }
 
+    // Check if this face is already registered to another user
+    const usersWithFace = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        nip: users.nip,
+        faceEmbedding: users.faceEmbedding,
+      })
+      .from(users)
+      .where(isNotNull(users.faceEmbedding));
+
+    const uniquenessCheck = checkFaceUniqueness(
+      faceData.embedding,
+      usersWithFace,
+      parseInt(userId), // Exclude current user
+      0.6 // 60% similarity threshold
+    );
+
+    if (!uniquenessCheck.isUnique) {
+      console.warn(`Face already registered to user: ${uniquenessCheck.matchedUser?.fullName} (NIP: ${uniquenessCheck.matchedUser?.nip}), similarity: ${(uniquenessCheck.similarity * 100).toFixed(1)}%`);
+      return NextResponse.json(
+        {
+          error: `Wajah ini sudah terdaftar untuk karyawan lain (${uniquenessCheck.matchedUser?.fullName} - ${uniquenessCheck.matchedUser?.nip}). Satu wajah hanya boleh terdaftar untuk satu akun.`,
+          matchedUser: {
+            fullName: uniquenessCheck.matchedUser?.fullName,
+            nip: uniquenessCheck.matchedUser?.nip,
+          },
+          similarity: (uniquenessCheck.similarity * 100).toFixed(1) + '%'
+        },
+        { status: 400 }
+      );
+    }
+
     // Save embedding to database
     const embeddingString = JSON.stringify(faceData.embedding);
-    
+
     console.log(`Saving face embedding to DB for user ${userId}`);
     console.log(`Embedding string length: ${embeddingString.length}`);
-    
+
     const updateData = {
       faceEmbedding: embeddingString,
       faceRegisteredAt: sql`NOW()`,
     };
-    
+
     console.log(`Update data prepared`);
-    
+
     const [updatedUser] = await db
       .update(users)
       .set(updateData)
@@ -162,7 +196,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const session = await getSession();
-    
+
     // Check authentication
     if (!session?.userId) {
       return NextResponse.json(

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, isNotNull } from 'drizzle-orm';
 import { verifySession } from '@/lib/session';
-import { registerFace } from '@/lib/faceApi';
+import { registerFace, checkFaceUniqueness } from '@/lib/faceApi';
 
 export async function POST(request) {
   try {
@@ -34,9 +34,38 @@ export async function POST(request) {
       );
     }
 
+    // Check if this face is already registered to another user
+    const usersWithFace = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        nip: users.nip,
+        faceEmbedding: users.faceEmbedding,
+      })
+      .from(users)
+      .where(isNotNull(users.faceEmbedding));
+
+    const uniquenessCheck = checkFaceUniqueness(
+      faceResult.embedding,
+      usersWithFace,
+      session.userId, // Exclude current user
+      0.6 // 60% similarity threshold
+    );
+
+    if (!uniquenessCheck.isUnique) {
+      console.warn(`Face already registered to user: ${uniquenessCheck.matchedUser?.fullName}, similarity: ${(uniquenessCheck.similarity * 100).toFixed(1)}%`);
+      return NextResponse.json(
+        {
+          error: 'Wajah ini sudah terdaftar untuk akun lain. Satu wajah hanya boleh terdaftar untuk satu akun.',
+          similarity: (uniquenessCheck.similarity * 100).toFixed(1) + '%'
+        },
+        { status: 400 }
+      );
+    }
+
     // Store embedding in database
     const embeddingJson = JSON.stringify(faceResult.embedding);
-    
+
     const [updatedUser] = await db
       .update(users)
       .set({
