@@ -6,23 +6,11 @@ import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { isWithinAnyOfficeLocation } from '@/lib/geolocation';
 import { verifyFace } from '@/lib/faceApi';
-
-// Timezone helper for WIB (Asia/Jakarta)
-function getWIBDate() {
-  const now = new Date();
-  const wibOffset = 7 * 60; // WIB is UTC+7
-  const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const wibTime = new Date(utcTime + (wibOffset * 60000));
-  return wibTime;
-}
-
-function getWIBDateString(date = null) {
-  const wibDate = date ? new Date(date) : getWIBDate();
-  const year = wibDate.getFullYear();
-  const month = String(wibDate.getMonth() + 1).padStart(2, '0');
-  const day = String(wibDate.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+import {
+  getWIBDate,
+  getWIBDateString,
+  validateCheckOut as validateShiftCheckOut
+} from '@/lib/shiftUtils';
 
 export async function POST(request) {
   try {
@@ -67,7 +55,7 @@ export async function POST(request) {
     // Face verification (optional)
     let faceVerified = false;
     let faceSimilarity = null;
-    
+
     if (faceImageFile) {
       try {
         // Get user's stored face embedding
@@ -82,7 +70,7 @@ export async function POST(request) {
         if (user && user.faceEmbedding) {
           // Verify face using FastAPI
           const storedEmbedding = JSON.parse(user.faceEmbedding);
-          
+
           const faceFormData = new FormData();
           faceFormData.append('file', faceImageFile);
           faceFormData.append('stored_embedding', JSON.stringify(storedEmbedding));
@@ -95,7 +83,7 @@ export async function POST(request) {
 
           if (faceResponse.ok) {
             const faceData = await faceResponse.json();
-            
+
             if (faceData.success && faceData.verified) {
               faceVerified = true;
               faceSimilarity = faceData.similarity;
@@ -104,14 +92,14 @@ export async function POST(request) {
               console.warn('Face verification failed: not a match');
               // REJECT clock-out if face doesn't match
               return NextResponse.json(
-                { error: 'Verifikasi wajah gagal. Wajah tidak cocok dengan data yang terdaftar.' }, 
+                { error: 'Verifikasi wajah gagal. Wajah tidak cocok dengan data yang terdaftar.' },
                 { status: 403 }
               );
             }
           } else {
             console.error('Face API error:', await faceResponse.text());
             return NextResponse.json(
-              { error: 'Gagal melakukan verifikasi wajah. Silakan coba lagi.' }, 
+              { error: 'Gagal melakukan verifikasi wajah. Silakan coba lagi.' },
               { status: 500 }
             );
           }
@@ -119,7 +107,7 @@ export async function POST(request) {
       } catch (faceError) {
         console.error('Face verification error:', faceError);
         return NextResponse.json(
-          { error: 'Terjadi kesalahan saat verifikasi wajah.' }, 
+          { error: 'Terjadi kesalahan saat verifikasi wajah.' },
           { status: 500 }
         );
       }
@@ -220,81 +208,33 @@ export async function POST(request) {
       );
     }
 
-    // Validate clock out time
-    const shiftStart = userShift[0].startTime;
-    const shiftEnd = userShift[0].endTime;
+    // Validate check-out time using shift validation utility
+    const checkOutValidation = validateShiftCheckOut(userShift[0], nowWIB);
 
-    // Helper function to convert time string to minutes since midnight
-    const timeToMinutes = (timeStr) => {
-      const [h, m, s] = timeStr.split(':').map(Number);
-      return h * 60 + m;
-    };
-
-    const currentTime = nowWIB.toTimeString().split(' ')[0]; // HH:MM:SS in WIB
-    const currentMin = timeToMinutes(currentTime);
-    const startMin = timeToMinutes(shiftStart);
-    const endMin = timeToMinutes(shiftEnd);
-
-    // Calculate max clock out (2 hours after shift end, handling midnight)
-    let maxClockOutMin = endMin + 120; // 2 hours = 120 minutes
-    if (maxClockOutMin >= 1440) maxClockOutMin -= 1440; // Wrap around midnight
-
-    // For midnight shifts (e.g., 20:00 - 05:00)
-    const isMidnightShift = startMin > endMin;
-    
-    if (isMidnightShift) {
-      // Check if current time is in valid clock out window
-      // Valid window: from shift start to (shift end + 2 hours)
-      const isAfterMidnight = currentMin < startMin;
-      
-      if (isAfterMidnight) {
-        // We're in the "next day" portion (e.g., 02:00 for 20:00-05:00 shift)
-        if (currentMin > maxClockOutMin) {
-          const maxClockOutHour = Math.floor(maxClockOutMin / 60);
-          const maxClockOutMinute = maxClockOutMin % 60;
-          return NextResponse.json(
-            { error: `Clock out melewati batas waktu. Batas clock out adalah ${String(maxClockOutHour).padStart(2, '0')}:${String(maxClockOutMinute).padStart(2, '0')} (2 jam setelah shift berakhir). Hubungi admin.` },
-            { status: 400 }
-          );
-        }
-      }
-      // If before midnight (e.g., 21:00), it's always valid for midnight shift
-    } else {
-      // Normal shift (e.g., 08:00 - 16:00)
-      if (currentMin < startMin) {
-        return NextResponse.json(
-          { error: `Clock out hanya dapat dilakukan setelah shift dimulai (${shiftStart.substring(0, 5)})` },
-          { status: 400 }
-        );
-      }
-
-      if (currentMin > maxClockOutMin) {
-        const maxClockOutHour = Math.floor(maxClockOutMin / 60);
-        const maxClockOutMinute = maxClockOutMin % 60;
-        return NextResponse.json(
-          { error: `Clock out melewati batas waktu. Batas clock out adalah ${String(maxClockOutHour).padStart(2, '0')}:${String(maxClockOutMinute).padStart(2, '0')} (2 jam setelah shift berakhir). Hubungi admin.` },
-          { status: 400 }
-        );
-      }
+    if (!checkOutValidation.valid) {
+      return NextResponse.json(
+        { error: checkOutValidation.error },
+        { status: 400 }
+      );
     }
 
     // Update attendance with clock out (WIB timestamp)
     const updateData = {
-      checkOutTime: nowWIB, // Use WIB timestamp instead of NOW()
+      checkOutTime: nowWIB,
     };
-    
+
     // Add location if provided
     if (latitude && longitude) {
       updateData.checkOutLat = latitude.toString();
       updateData.checkOutLng = longitude.toString();
     }
-    
+
     // Add face verification results
     if (faceVerified) {
       updateData.checkOutFaceVerified = faceVerified;
       updateData.checkOutFaceSimilarity = faceSimilarity ? faceSimilarity.toString() : null;
     }
-    
+
     const [updatedAttendance] = await db
       .update(attendance)
       .set(updateData)
