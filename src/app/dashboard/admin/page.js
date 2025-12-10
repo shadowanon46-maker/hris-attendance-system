@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -52,11 +52,11 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
@@ -176,13 +176,12 @@ export default function AdminDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            record.status === 'hadir'
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${record.status === 'hadir'
                               ? 'bg-green-100 text-green-700'
                               : record.status === 'terlambat'
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}
+                                ? 'bg-yellow-100 text-yellow-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}
                         >
                           {record.status}
                         </span>

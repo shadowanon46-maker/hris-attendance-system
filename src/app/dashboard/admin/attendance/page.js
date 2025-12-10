@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function AttendancePage() {
   const [attendances, setAttendances] = useState([]);
@@ -42,11 +42,11 @@ export default function AttendancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Data Absensi</h2>
@@ -154,13 +154,12 @@ export default function AttendancePage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                              record.status === 'hadir'
+                            className={`px-2 py-1 text-xs font-semibold rounded-full ${record.status === 'hadir'
                                 ? 'bg-green-100 text-green-800'
                                 : record.status === 'terlambat'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
                           >
                             {record.status}
                           </span>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 import FaceCapture from '@/components/FaceCapture';
 
 export default function EmployeesPage() {
@@ -80,14 +80,14 @@ export default function EmployeesPage() {
 
   const handleFaceCapture = (capturedFile) => {
     setFaceImage(capturedFile);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setFacePreview(reader.result);
     };
     reader.readAsDataURL(capturedFile);
-    
+
     setShowFaceCapture(false);
   };
 
@@ -101,7 +101,7 @@ export default function EmployeesPage() {
     setMessage({ type: '', text: '' });
 
     try {
-      const url = modalMode === 'create' 
+      const url = modalMode === 'create'
         ? '/api/admin/employees/create'
         : `/api/admin/employees/update`;
 
@@ -136,9 +136,9 @@ export default function EmployeesPage() {
           if (!faceRes.ok) {
             const faceData = await faceRes.json();
             console.error('Face registration failed:', faceData.error);
-            setMessage({ 
-              type: 'warning', 
-              text: `${data.message} Namun registrasi wajah gagal: ${faceData.error}` 
+            setMessage({
+              type: 'warning',
+              text: `${data.message} Namun registrasi wajah gagal: ${faceData.error}`
             });
             setShowModal(false);
             fetchEmployees();
@@ -148,9 +148,9 @@ export default function EmployeesPage() {
           setMessage({ type: 'success', text: `${data.message} dan wajah berhasil didaftarkan!` });
         } catch (faceError) {
           console.error('Face registration error:', faceError);
-          setMessage({ 
-            type: 'warning', 
-            text: `${data.message} Namun registrasi wajah gagal.` 
+          setMessage({
+            type: 'warning',
+            text: `${data.message} Namun registrasi wajah gagal.`
           });
         }
       } else {
@@ -203,11 +203,11 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Data Karyawan</h1>
@@ -217,11 +217,10 @@ export default function EmployeesPage() {
         {/* Message */}
         {message.text && (
           <div
-            className={`mb-6 p-4 rounded-lg border ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-lg border ${message.type === 'success'
                 ? 'bg-green-50 border-green-200 text-green-800'
                 : 'bg-red-50 border-red-200 text-red-800'
-            }`}
+              }`}
           >
             {message.text}
           </div>
@@ -285,22 +284,20 @@ export default function EmployeesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          employee.role === 'admin'
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${employee.role === 'admin'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
-                        }`}
+                          }`}
                       >
                         {employee.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          employee.isActive
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${employee.isActive
                             ? 'bg-green-100 text-green-700'
                             : 'bg-red-100 text-red-700'
-                        }`}
+                          }`}
                       >
                         {employee.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
@@ -486,11 +483,10 @@ export default function EmployeesPage() {
 
               {message.text && (
                 <div
-                  className={`mt-4 p-3 rounded-lg border text-sm ${
-                    message.type === 'success'
+                  className={`mt-4 p-3 rounded-lg border text-sm ${message.type === 'success'
                       ? 'bg-green-50 border-green-200 text-green-800'
                       : 'bg-red-50 border-red-200 text-red-800'
-                  }`}
+                    }`}
                 >
                   {message.text}
                 </div>

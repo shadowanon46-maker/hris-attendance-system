@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function ShiftSchedulePage() {
   const [employees, setEmployees] = useState([]);
@@ -11,15 +11,15 @@ export default function ShiftSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   // Week selector
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [weekDates, setWeekDates] = useState([]);
-  
+
   // Schedule data (nested object: {userId: {date: shiftId}})
   const [scheduleData, setScheduleData] = useState({});
-  
+
   const router = useRouter();
 
   useEffect(() => {
@@ -28,11 +28,11 @@ export default function ShiftSchedulePage() {
     const monday = getMonday(today);
     const sunday = new Date(monday);
     sunday.setDate(sunday.getDate() + 6);
-    
+
     setStartDate(formatDate(monday));
     setEndDate(formatDate(sunday));
     generateWeekDates(monday);
-    
+
     fetchEmployees();
     fetchShifts();
   }, []);
@@ -98,7 +98,7 @@ export default function ShiftSchedulePage() {
       if (res.ok) {
         const data = await res.json();
         setSchedules(data.schedules || []);
-        
+
         // Convert to nested object for easy access
         const scheduleMap = {};
         data.schedules.forEach((schedule) => {
@@ -176,7 +176,7 @@ export default function ShiftSchedulePage() {
     const newMonday = getMonday(current);
     const newSunday = new Date(newMonday);
     newSunday.setDate(newSunday.getDate() + 6);
-    
+
     setStartDate(formatDate(newMonday));
     setEndDate(formatDate(newSunday));
     generateWeekDates(newMonday);
@@ -202,11 +202,11 @@ export default function ShiftSchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header - Simple & Clean */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Penjadwalan Shift</h1>
@@ -216,11 +216,10 @@ export default function ShiftSchedulePage() {
         {/* Message - Clean */}
         {message.text && (
           <div
-            className={`mb-6 p-4 rounded-lg border ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-lg border ${message.type === 'success'
                 ? 'bg-green-50 border-green-200 text-green-800'
                 : 'bg-red-50 border-red-200 text-red-800'
-            }`}
+              }`}
           >
             {message.text}
           </div>
@@ -232,14 +231,14 @@ export default function ShiftSchedulePage() {
             <div>
               <p className="text-sm text-gray-500 mb-1">Periode</p>
               <p className="text-lg font-semibold text-gray-900">
-                {new Date(startDate).toLocaleDateString('id-ID', { 
-                  day: 'numeric', 
-                  month: 'short', 
-                  year: 'numeric' 
-                })} - {new Date(endDate).toLocaleDateString('id-ID', { 
-                  day: 'numeric', 
-                  month: 'short', 
-                  year: 'numeric' 
+                {new Date(startDate).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
+                })} - {new Date(endDate).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric'
                 })}
               </p>
             </div>
@@ -282,9 +281,8 @@ export default function ShiftSchedulePage() {
                     return (
                       <th
                         key={date}
-                        className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${
-                          isWeekend ? 'bg-red-50 text-red-700' : 'text-gray-700'
-                        }`}
+                        className={`px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider ${isWeekend ? 'bg-red-50 text-red-700' : 'text-gray-700'
+                          }`}
                       >
                         <div className="font-bold">{getDayName(date)}</div>
                         <div className="font-normal text-gray-500">
@@ -314,11 +312,10 @@ export default function ShiftSchedulePage() {
                             onChange={(e) =>
                               handleShiftChange(employee.id, date, e.target.value)
                             }
-                            className={`w-full px-3 py-2 text-sm border rounded-lg transition-colors ${
-                              hasSchedule 
-                                ? 'border-indigo-300 bg-indigo-50 text-indigo-900' 
+                            className={`w-full px-3 py-2 text-sm border rounded-lg transition-colors ${hasSchedule
+                                ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
                                 : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                            }`}
+                              }`}
                           >
                             <option value="">-</option>
                             {shifts.map((shift) => (

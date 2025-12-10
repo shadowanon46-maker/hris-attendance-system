@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AdminNavbar from '@/components/AdminNavbar';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState([]);
@@ -17,6 +18,7 @@ export default function LocationsPage() {
     radius: '100',
     isActive: true,
   });
+  const router = useRouter();
 
   useEffect(() => {
     fetchLocations();
@@ -144,10 +146,15 @@ export default function LocationsPage() {
     }
   };
 
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Lokasi Kantor</h1>
@@ -195,11 +202,10 @@ export default function LocationsPage() {
                       <td className="px-6 py-4 text-sm text-gray-600">{location.radius}</td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            location.isActive
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-600'
-                          }`}
+                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${location.isActive
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-600'
+                            }`}
                         >
                           {location.isActive ? 'Aktif' : 'Nonaktif'}
                         </span>
@@ -233,7 +239,7 @@ export default function LocationsPage() {
             </table>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Modal */}
       {isModalOpen && (

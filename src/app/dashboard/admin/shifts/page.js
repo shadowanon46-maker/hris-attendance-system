@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState([]);
@@ -125,11 +125,11 @@ export default function ShiftsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Master Shift</h1>
@@ -139,11 +139,10 @@ export default function ShiftsPage() {
         {/* Message */}
         {message.text && (
           <div
-            className={`mb-6 p-4 rounded-lg border ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-lg border ${message.type === 'success'
                 ? 'bg-green-50 border-green-200 text-green-800'
                 : 'bg-red-50 border-red-200 text-red-800'
-            }`}
+              }`}
           >
             {message.text}
           </div>

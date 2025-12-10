@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AdminNavbar from '@/components/AdminNavbar';
+import AdminSidebar from '@/components/AdminSidebar';
 
 export default function ReportsPage() {
   const [filters, setFilters] = useState({
@@ -76,11 +76,11 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminNavbar onLogout={handleLogout} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <AdminSidebar onLogout={handleLogout} />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8 overflow-auto">
         {/* Page Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Laporan & Export</h2>
@@ -89,11 +89,10 @@ export default function ReportsPage() {
         {/* Message */}
         {message.text && (
           <div
-            className={`mb-6 p-4 rounded-md ${
-              message.type === 'success'
+            className={`mb-6 p-4 rounded-md ${message.type === 'success'
                 ? 'bg-green-50 text-green-800'
                 : 'bg-red-50 text-red-800'
-            }`}
+              }`}
           >
             {message.text}
           </div>
